@@ -218,6 +218,7 @@ class NoteTaker {
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('editorForm').style.display = 'block';
     document.getElementById('editorActions').style.display = 'flex';
+    document.getElementById('deleteBtn').hidden = !this.currentNote || !this.currentNote.id;
   }
 
   hideEditor() {
@@ -268,6 +269,7 @@ class NoteTaker {
 
       const savedNote = await response.json();
       this.currentNote = savedNote;
+      document.getElementById('deleteBtn').hidden = false;
 
       const existingIndex = this.notes.findIndex(n => n.id === savedNote.id);
       if (existingIndex >= 0) {
