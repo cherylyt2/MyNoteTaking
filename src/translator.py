@@ -1,5 +1,6 @@
 import argparse
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -8,6 +9,7 @@ from openai import OpenAI
 load_dotenv()
 
 MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free"
+PROMPT_PATH = Path(__file__).resolve().parent.parent / "prompts" / "translate_prompt.md"
 TARGET_LANGUAGES = {
     "cantonese": "Cantonese, written in Traditional Chinese characters",
     "chinese": "Traditional Chinese",
@@ -28,26 +30,38 @@ def llm_generate(prompt: str, target_language: str) -> str:
     if not api_key:
         raise RuntimeError("OPENROUTER_API_KEY is missing. Check your .env file.")
 
+    system_prompt = PROMPT_PATH.read_text(encoding="utf-8").replace(
+        "{{target_language}}", language
+    )
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=api_key,
     )
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You are a professional translator. Translate the user's input "
-                    f"into {language}. Preserve the original meaning, tone, and "
-                    "formatting. Return only the translation, without explanations."
-                ),
-            },
-            {"role": "user", "content": prompt},
-        ],
-        extra_body={"reasoning": {"enabled": True}},
+    for attempt in range(2):
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                {"role": "user", "content": prompt},
+            ],
+            extra_body={"reasoning": {"enabled": True}},
+        )
+        choices = getattr(response, "choices", None)
+        message = getattr(choices[0], "message", None) if choices else None
+        translation = getattr(message, "content", None)
+        if (
+            isinstance(translation, str)
+            and translation.strip()
+            and "\ufffd" not in translation
+        ):
+            return translation.strip()
+
+    raise RuntimeError(
+        "Translation provider returned no valid translation after retry. Please try again."
     )
-    return response.choices[0].message.content or ""
 
 
 def main() -> None:

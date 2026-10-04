@@ -329,6 +329,52 @@
             gap: 10px;
         }
 
+        .translate-control {
+            position: relative;
+        }
+
+        .translate-toolbar {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: repeat(3, 40px);
+            gap: 4px;
+            padding: 8px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 10px 24px var(--shadow);
+        }
+
+        .translate-toolbar.hidden {
+            display: none;
+        }
+
+        .translate-language {
+            display: grid;
+            width: 40px;
+            aspect-ratio: 1;
+            place-items: center;
+            padding: 0;
+            border: 0;
+            border-radius: 6px;
+            background: var(--card);
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .translate-language img {
+            display: block;
+            width: 24px;
+            height: 24px;
+        }
+
+        .translate-language:hover {
+            background: var(--purple-soft);
+        }
+
         .btn {
             padding: 8px 16px;
             border: none;
@@ -625,6 +671,16 @@
                     <h2 class="editor-title" id="editorTitle">Select a note to edit</h2>
                     <div class="editor-actions" id="editorActions" style="display: none;">
                         <button class="btn btn-save" id="saveBtn">💾 Save</button>
+                        <div class="translate-control">
+                            <button type="button" class="btn btn-secondary" id="translateBtn" aria-expanded="false" aria-controls="translateToolbar">🌐 Translate</button>
+                            <div class="translate-toolbar hidden" id="translateToolbar" role="group" aria-label="Translate note to">
+                                <button type="button" class="translate-language" data-target-language="Chinese" aria-label="Chinese" title="Chinese"><img src="/flag-emoji/cn.svg" alt=""></button>
+                                <button type="button" class="translate-language" data-target-language="Cantonese" aria-label="Cantonese" title="Cantonese"><img src="/flag-emoji/hk.svg" alt=""></button>
+                                <button type="button" class="translate-language" data-target-language="English" aria-label="English" title="English"><img src="/flag-emoji/gb.svg" alt=""></button>
+                                <button type="button" class="translate-language" data-target-language="Japanese" aria-label="Japanese" title="Japanese"><img src="/flag-emoji/jp.svg" alt=""></button>
+                                <button type="button" class="translate-language" data-target-language="Korean" aria-label="Korean" title="Korean"><img src="/flag-emoji/kr.svg" alt=""></button>
+                            </div>
+                        </div>
                         <button class="btn btn-delete" id="deleteBtn">🗑️ Delete</button>
                     </div>
                 </div>

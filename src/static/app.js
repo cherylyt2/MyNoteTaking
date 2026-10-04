@@ -30,6 +30,23 @@ class NoteTaker {
     document.getElementById('folderCancelBtn').addEventListener('click', () => this.closeFolderModal());
     document.getElementById('saveBtn').addEventListener('click', () => this.saveNote());
     document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
+    document.getElementById('translateBtn').addEventListener('click', () => this.toggleTranslateToolbar());
+    document.getElementById('translateToolbar').addEventListener('click', (event) => {
+      const languageButton = event.target.closest('[data-target-language]');
+      if (languageButton) {
+        this.translateNote(languageButton.dataset.targetLanguage);
+      }
+    });
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('.translate-control')) {
+        this.toggleTranslateToolbar(false);
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        this.toggleTranslateToolbar(false);
+      }
+    });
     document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
     document.getElementById('foldersList').addEventListener('click', (event) => {
       const actionTarget = event.target.closest('[data-folder-action]');
@@ -53,23 +70,6 @@ class NoteTaker {
       }
     });
 
-    let saveTimeout;
-    const autoSave = () => {
-      clearTimeout(saveTimeout);
-      saveTimeout = setTimeout(() => {
-        if (this.currentNote && this.currentNote.id) {
-          this.saveNote(true);
-        }
-      }, 2000);
-    };
-
-    document.getElementById('noteTitle').addEventListener('input', autoSave);
-    document.getElementById('noteContent').addEventListener('input', autoSave);
-    document.getElementById('noteFolder').addEventListener('change', () => {
-      if (this.currentNote && this.currentNote.id) {
-        this.saveNote(true);
-      }
-    });
   }
 
   async loadFolders() {
@@ -222,6 +222,7 @@ class NoteTaker {
   }
 
   hideEditor() {
+    this.toggleTranslateToolbar(false);
     document.getElementById('emptyState').style.display = 'block';
     document.getElementById('editorForm').style.display = 'none';
     document.getElementById('editorActions').style.display = 'none';
@@ -229,7 +230,48 @@ class NoteTaker {
     this.currentNote = null;
   }
 
-  async saveNote(isAutoSave = false) {
+  toggleTranslateToolbar(forceOpen) {
+    const toolbar = document.getElementById('translateToolbar');
+    const button = document.getElementById('translateBtn');
+    const isOpen = forceOpen === undefined ? toolbar.classList.contains('hidden') : forceOpen;
+    toolbar.classList.toggle('hidden', !isOpen);
+    button.setAttribute('aria-expanded', String(isOpen));
+  }
+
+  async translateNote(targetLanguage) {
+    const note = this.currentNote;
+    const content = document.getElementById('noteContent').value.trim();
+    if (!note) return;
+    if (!content) {
+      this.showMessage('Enter note content before translating.', 'error');
+      return;
+    }
+
+    this.toggleTranslateToolbar(false);
+    const translateButton = document.getElementById('translateBtn');
+    translateButton.disabled = true;
+    this.showMessage(`Translating to ${targetLanguage}...`, 'loading');
+
+    try {
+      const response = await fetch('/api/notes/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, target_language: targetLanguage })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Translation failed');
+      if (this.currentNote !== note) return;
+
+      document.getElementById('noteContent').value = result.translation;
+      this.showMessage(`Translated to ${targetLanguage}. Click Save to keep this change.`, 'success');
+    } catch (error) {
+      this.showMessage(`Translation failed: ${error.message}`, 'error');
+    } finally {
+      translateButton.disabled = false;
+    }
+  }
+
+  async saveNote() {
     if (!this.currentNote) return;
 
     const title = document.getElementById('noteTitle').value.trim();
@@ -237,9 +279,7 @@ class NoteTaker {
     const folderId = document.getElementById('noteFolder').value;
 
     if (!title && !content) {
-      if (!isAutoSave) {
-        this.showMessage('Please enter a title or content', 'error');
-      }
+      this.showMessage('Please enter a title or content', 'error');
       return;
     }
 
@@ -284,9 +324,7 @@ class NoteTaker {
       this.populateFolderSelect();
       document.getElementById('editorTitle').textContent = savedNote.title;
 
-      if (!isAutoSave) {
-        this.showMessage('Note saved successfully!', 'success');
-      }
+      this.showMessage('Note saved successfully!', 'success');
     } catch (error) {
       this.showMessage(`Error saving note: ${error.message}`, 'error');
     }

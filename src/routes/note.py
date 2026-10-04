@@ -2,8 +2,35 @@ from flask import Blueprint, jsonify, request
 
 from src.models.folder import Folder
 from src.models.note import Note, db
+from src.translator import llm_generate
 
 note_bp = Blueprint('note', __name__)
+
+
+@note_bp.route('/notes/translate', methods=['POST'])
+def translate_note():
+    data = request.get_json(silent=True) or {}
+    content = data.get('content')
+    target_language = data.get('target_language')
+
+    if not isinstance(content, str) or not content.strip():
+        return jsonify({'error': 'Note content is required'}), 400
+    if not isinstance(target_language, str):
+        return jsonify({'error': 'Target language is required'}), 400
+
+    try:
+        translation = llm_generate(content.strip(), target_language)
+    except ValueError as error:
+        return jsonify({'error': str(error)}), 400
+    except RuntimeError as error:
+        return jsonify({'error': str(error)}), 503
+    except Exception as error:
+        return jsonify({'error': str(error)}), 502
+
+    return jsonify({
+        'translation': translation,
+        'target_language': target_language,
+    })
 
 
 @note_bp.route('/notes', methods=['GET'])
