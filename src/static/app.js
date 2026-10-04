@@ -20,6 +20,11 @@ class NoteTaker {
     if (folderButton) {
       folderButton.addEventListener('click', () => this.createFolder());
     }
+    document.getElementById('folderBackBtn').addEventListener('click', () => {
+      this.selectedFolderId = 'all';
+      this.renderFolderList();
+      this.renderNotesList();
+    });
     document.getElementById('folderForm').addEventListener('submit', (event) => {
       event.preventDefault();
       const value = document.getElementById('folderNameInput').value.trim();
@@ -105,6 +110,21 @@ class NoteTaker {
 
   renderFolderList() {
     const foldersList = document.getElementById('foldersList');
+    const folderPanel = document.querySelector('.folder-panel');
+    const folderBackButton = document.getElementById('folderBackBtn');
+    const folderViewTitle = document.getElementById('folderViewTitle');
+    const newFolderButton = document.getElementById('newFolderBtn');
+    const selectedFolder = this.selectedFolderId === 'all'
+      ? null
+      : this.folders.find(folder => String(folder.id) === String(this.selectedFolderId));
+    const isInFolder = Boolean(selectedFolder);
+
+    folderPanel.hidden = false;
+    folderBackButton.hidden = !isInFolder;
+    folderViewTitle.textContent = selectedFolder ? selectedFolder.name : 'Folders';
+    newFolderButton.hidden = isInFolder;
+    foldersList.hidden = isInFolder;
+
     const allFolder = `
       <div class="folder-row">
         <button type="button" class="folder-item ${this.selectedFolderId === 'all' ? 'active' : ''}" data-folder-id="all">
@@ -216,7 +236,7 @@ class NoteTaker {
 
   showEditor() {
     document.getElementById('emptyState').style.display = 'none';
-    document.getElementById('editorForm').style.display = 'block';
+    document.getElementById('editorForm').style.display = 'flex';
     document.getElementById('editorActions').style.display = 'flex';
     document.getElementById('deleteBtn').hidden = !this.currentNote || !this.currentNote.id;
   }
