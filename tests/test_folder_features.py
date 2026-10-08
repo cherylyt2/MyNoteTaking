@@ -1,16 +1,19 @@
+import os
 import unittest
 
-from src.main import app, db
+os.environ.setdefault('DATABASE_URL', 'sqlite:///:memory:')
+
+from src.main import create_app
+from src.models.user import db
 
 
 class FolderFeatureTests(unittest.TestCase):
     def setUp(self):
-        app.config['TESTING'] = True
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-        with app.app_context():
-            db.drop_all()
-            db.create_all()
-        self.client = app.test_client()
+        self.app = create_app({
+            'TESTING': True,
+            'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+        })
+        self.client = self.app.test_client()
 
     def test_folder_crud_and_note_assignment(self):
         create_folder_response = self.client.post('/api/folders', json={'name': 'Work'})

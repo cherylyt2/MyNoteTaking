@@ -3,13 +3,18 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from src.main import app
+os.environ.setdefault('DATABASE_URL', 'sqlite:///:memory:')
+
+from src.main import create_app
 from src.translator import llm_generate
 
 
 class TranslationTests(unittest.TestCase):
     def setUp(self):
-        app.config['TESTING'] = True
+        app = create_app({
+            'TESTING': True,
+            'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+        })
         self.client = app.test_client()
 
     @patch('src.routes.note.llm_generate', return_value='こんにちは')

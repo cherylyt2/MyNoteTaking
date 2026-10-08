@@ -30,7 +30,7 @@ The application is deployed and accessible at: **https://3dhkilc88dkk.manus.spac
 - **Flask-CORS**: Cross-origin resource sharing support
 
 ### Database
-- **SQLite**: Lightweight, file-based database for data persistence
+- **Neon Postgres**: Serverless PostgreSQL accessed through SQLAlchemy and psycopg
 
 ## 📁 Project Structure
 
@@ -46,8 +46,6 @@ notetaking-app/
 │   ├── static/
 │   │   ├── index.html       # Frontend application
 │   │   └── favicon.ico      # Application icon
-│   ├── database/
-│   │   └── app.db           # SQLite database file
 │   └── main.py              # Flask application entry point
 ├── venv/                    # Python virtual environment
 ├── requirements.txt         # Python dependencies
@@ -79,12 +77,20 @@ notetaking-app/
    pip install -r requirements.txt
    ```
 
-4. **Run the application**
+4. **Configure the database**
+   Set `DATABASE_URL` to your Neon pooled connection string. The connection string is available from the Neon Console's **Connect** dialog and should use a hostname containing `-pooler` for application traffic.
+
+   PowerShell:
+   ```powershell
+   $env:DATABASE_URL = "postgresql://USER:PASSWORD@HOST-pooler/DBNAME?sslmode=require"
+   ```
+
+5. **Run the application**
    ```bash
    python src/main.py
    ```
 
-5. **Access the application**
+6. **Access the application**
    - Open your browser and go to `http://localhost:5001`
 
 ## 📡 API Endpoints
@@ -147,9 +153,10 @@ CREATE TABLE note (
 
 The application is configured for easy deployment with:
 - CORS enabled for cross-origin requests
-- Host binding to `0.0.0.0` for external access
-- Production-ready Flask configuration
-- Persistent SQLite database
+- A Flask entrypoint recognized by Vercel
+- Neon Postgres persistence through `DATABASE_URL`
+
+In Vercel, add the Neon pooled connection string as the `DATABASE_URL` environment variable for each environment, then redeploy. Set `SECRET_KEY` to a long random value in production. The app creates missing tables at startup; existing SQLite data is not copied automatically and must be migrated separately.
 
 ## 🔧 Configuration
 
@@ -158,8 +165,8 @@ The application is configured for easy deployment with:
 - `SECRET_KEY`: Flask secret key for sessions
 
 ### Database Configuration
-- Database file: `src/database/app.db`
-- Automatic table creation on first run
+- Connection: Neon pooled Postgres URL in `DATABASE_URL`
+- Automatic table creation on app startup
 - SQLAlchemy ORM for database operations
 
 ## 📱 Browser Compatibility
@@ -204,5 +211,5 @@ Potential improvements for future versions:
 
 ---
 
-**Built with ❤️ using Flask, SQLite, and modern web technologies**
+**Built with ❤️ using Flask, Neon Postgres, and modern web technologies**
 
